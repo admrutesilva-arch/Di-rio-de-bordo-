@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diário de Bordo — registro de tarefas e crescimento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#FFF8EC;
+    --bg-2:#FFF1D2;
+    --panel:#FFFFFF;
+    --panel-2:#FFF4E0;
+    --line:#F2DEB8;
+    --line-soft:#F7EAD1;
+    --text:#3A2E1F;
+    --text-dim:#8A7457;
+    --text-faint:#BBA57F;
+    --accent:#FFB627;
+    --accent-strong:#FF9F1C;
+    --accent-wash:#FFEFC7;
+    --coral:#FF6F59;
+    --teal:#1FB6A6;
+    --violet:#8C5EE0;
+    --good:#28A879;
+    --bad:#F0554B;
+    --yt:#FF6B6B;
+    --ig:#C74BC2;
+    --fb:#3E8EF0;
+    --radius:5px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);}
+  body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  ::selection{background:var(--accent-wash);color:var(--text);}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;color:var(--text);}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+  input,select{font-family:inherit;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:226px;flex:none;
+    background:var(--bg-2);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;
+    padding:28px 0 20px;
+    position:sticky;top:0;height:100vh;
+  }
+  .brand{padding:0 22px 22px;border-bottom:1px solid var(--line);margin-bottom:14px;}
+  .brand .mark{font-family:'Fraunces',serif;font-weight:700;font-size:20px;color:var(--accent-strong);letter-spacing:0.2px;}
+  .brand .sub{font-size:11.5px;color:var(--text-dim);margin-top:4px;line-height:1.4;}
+  nav.tabs{display:flex;flex-direction:column;gap:1px;padding:6px 10px;flex:1;}
+  nav.tabs button{
+    display:flex;align-items:center;gap:10px;
+    background:transparent;border:none;color:var(--text-dim);
+    text-align:left;padding:10px 12px;border-radius:var(--radius);
+    font-size:13.5px;cursor:pointer;transition:background .15s,color .15s;
+  }
+  nav.tabs button .n{font-family:'Fraunces',serif;color:var(--text-faint);font-size:12px;width:16px;}
+  nav.tabs button:hover{background:var(--panel);color:var(--text);}
+  nav.tabs button.active{background:var(--accent);color:#3A2E1F;}
+  nav.tabs button.active .n{color:#5c4315;}
+  .sidebar-foot{padding:14px 22px 0;border-top:1px solid var(--line);margin-top:8px;}
+  .sidebar-foot button{
+    background:none;border:1px solid var(--line);color:var(--text-dim);
+    font-size:11.5px;padding:7px 10px;border-radius:var(--radius);cursor:pointer;width:100%;margin-top:8px;
+  }
+  .sidebar-foot button:hover{color:var(--text);border-color:var(--text-faint);}
+
+  /* ---------- Main ---------- */
+  main{flex:1;min-width:0;padding:34px 40px 60px;max-width:1080px;}
+  .topbar{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:26px;flex-wrap:wrap;gap:10px;}
+  .topbar .date{color:var(--text-dim);font-size:13px;text-transform:capitalize;}
+  .topbar h1{font-size:23px;}
+
+  .tab{display:none;}
+  .tab.active{display:block;animation:settle .25s ease;}
+  @keyframes settle{from{opacity:0;transform:translateY(3px);}to{opacity:1;transform:none;}}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:26px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 16px 14px;}
+  .stat .label{font-size:11px;color:var(--text-dim);margin-bottom:8px;}
+  .stat .value{font-family:'Fraunces',serif;font-size:24px;color:var(--text);}
+  .stat .value.accent{color:var(--accent-strong);}
+  .stat .sub{font-size:11.5px;color:var(--text-dim);margin-top:4px;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:22px;}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;}
+  .panel-head h2{font-size:16px;}
+  .panel-head .hint{font-size:11.5px;color:var(--text-faint);}
+
+  .field-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+  .field{display:flex;flex-direction:column;gap:5px;}
+  .field label{font-size:11px;color:var(--text-dim);}
+  .field input,.field select{
+    background:var(--bg);border:1px solid var(--line);color:var(--text);
+    padding:8px 10px;border-radius:var(--radius);font-size:13px;min-width:0;
+  }
+  .field input:focus,.field select:focus{outline:none;border-color:var(--accent-strong);}
+  .field.grow{flex:1;min-width:180px;}
+  .field.time{width:112px;}
+  .field.narrow{width:110px;}
+
+  .btn{background:var(--accent-strong);color:#3A2412;border:none;padding:9px 16px;border-radius:var(--radius);font-size:13px;font-weight:700;cursor:pointer;}
+  .btn:hover{background:var(--accent);}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text-dim);font-weight:500;}
+  .btn.ghost:hover{color:var(--text);border-color:var(--text-faint);}
+  .btn.small{padding:6px 10px;font-size:12px;}
+  .btn.danger{background:transparent;border:1px solid var(--bad);color:var(--bad);font-weight:500;}
+  .btn.danger:hover{background:var(--bad);color:#fff;}
+
+  .mode-toggle{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+  .mode-toggle button{background:var(--bg);color:var(--text-dim);border:none;padding:8px 14px;font-size:12.5px;cursor:pointer;}
+  .mode-toggle button.active{background:var(--accent-wash);color:var(--accent-strong);}
+
+  table{width:100%;border-collapse:collapse;}
+  table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-faint);font-weight:600;padding:0 10px 8px;border-bottom:1px solid var(--line);}
+  table td{padding:10px 10px;border-bottom:1px solid var(--line-soft);font-size:13px;vertical-align:middle;}
+  table tr:last-child td{border-bottom:none;}
+  table td.num,table th.num{text-align:right;}
+  table tfoot td{border-top:1px solid var(--line);border-bottom:none;padding-top:10px;font-weight:600;}
+  .empty-row td{color:var(--text-faint);font-style:italic;text-align:center;padding:22px 10px;}
+
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;flex:none;}
+  .tagname{display:flex;align-items:center;}
+  .cat-tag{font-size:10.5px;color:var(--text-dim);border:1px solid var(--line);padding:1px 6px;border-radius:8px;margin-left:8px;}
+
+  .row-actions{display:flex;gap:6px;justify-content:flex-end;}
+  .icon-btn{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:12px;padding:3px 6px;}
+  .icon-btn:hover{color:var(--accent-strong);}
+  .icon-btn.del:hover{color:var(--bad);}
+
+  .running-card{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    background:var(--accent-wash);border:1px solid var(--accent);border-radius:var(--radius);
+    padding:16px 18px;margin-bottom:20px;
+  }
+  .running-card .left{display:flex;align-items:center;gap:12px;}
+  .pulse{width:9px;height:9px;border-radius:50%;background:var(--accent-strong);animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,159,28,.5);}70%{box-shadow:0 0 0 8px rgba(255,159,28,0);}100%{box-shadow:0 0 0 0 rgba(255,159,28,0);}}
+  .running-card .name{font-family:'Fraunces',serif;font-size:15px;}
+  .running-card .elapsed{font-size:20px;color:var(--accent-strong);}
+
+  .chart-wrap{position:relative;height:260px;margin-top:6px;}
+  .chart-wrap.short{height:200px;}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+  @media (max-width:820px){.two-col{grid-template-columns:1fr;}}
+
+  .callout{border:1px solid var(--line);border-left:3px solid var(--accent-strong);background:var(--panel-2);padding:12px 14px;border-radius:var(--radius);font-size:12.5px;color:var(--text-dim);}
+
+  .plat-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .plat-tabs button{background:var(--bg);border:1px solid var(--line);color:var(--text-dim);padding:7px 13px;border-radius:14px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:7px;}
+  .plat-tabs button.active{border-color:var(--accent-strong);color:var(--text);background:var(--accent-wash);}
+
+  .best-worst{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+  @media (max-width:600px){.best-worst{grid-template-columns:1fr;}}
+  .bw-card{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;background:var(--panel);}
+  .bw-card.best{border-left:3px solid var(--good);}
+  .bw-card.worst{border-left:3px solid var(--bad);}
+  .bw-card .label{font-size:11px;color:var(--text-faint);margin-bottom:6px;}
+  .bw-card .val{font-family:'Fraunces',serif;font-size:19px;}
+  .bw-card .val.good{color:var(--good);}
+  .bw-card .val.bad{color:var(--bad);}
+  .bw-card .meta{font-size:11.5px;color:var(--text-dim);margin-top:3px;}
+
+  /* ---------- Rotina diária ---------- */
+  .routine-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;}
+  .routine-chip{
+    display:flex;flex-direction:column;gap:4px;align-items:flex-start;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:10px 14px;cursor:pointer;min-width:150px;transition:transform .12s,box-shadow .12s,border-color .12s;
+  }
+  .routine-chip:hover{border-color:var(--accent-strong);transform:translateY(-1px);box-shadow:0 4px 10px rgba(255,159,28,.15);}
+  .routine-chip .rc-name{display:flex;align-items:center;font-weight:600;font-size:13.5px;}
+  .routine-chip .rc-meta{font-size:11px;color:var(--text-faint);}
+  .routine-chip .rc-done{font-size:11px;color:var(--good);font-weight:600;}
+  .routine-list-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 4px;border-bottom:1px solid var(--line-soft);}
+  .routine-list-item:last-child{border-bottom:none;}
+  .order-btns{display:flex;flex-direction:column;gap:0;}
+  .order-btns button{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:10px;line-height:1;padding:2px;}
+  .order-btns button:hover{color:var(--accent-strong);}
+
+  .mobile-tabs{display:none;}
+  @media (max-width:880px){
+    .app{flex-direction:column;}
+    .sidebar{width:100%;height:auto;position:relative;flex-direction:row;align-items:center;padding:14px 16px;overflow-x:auto;}
+    .brand{border:none;padding:0 14px 0 0;margin:0;}
+    .sidebar-foot{display:none;}
+    nav.tabs{flex-direction:row;padding:0;}
+    nav.tabs button{white-space:nowrap;}
+    main{padding:22px 18px 40px;}
+  }
+  ::-webkit-scrollbar{height:8px;width:8px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">☀ Diário de Bordo</div>
+      <div class="sub">seu dia, sua energia, seu progresso</div>
+    </div>
+    <nav class="tabs" id="navTabs">
+      <button data-tab="rotina" class="active"><span class="n">00</span> Rotina diária</button>
+      <button data-tab="hoje"><span class="n">01</span> Hoje</button>
+      <button data-tab="historico"><span class="n">02</span> Histórico</button>
+      <button data-tab="atividades"><span class="n">03</span> Tempo por atividade</button>
+      <button data-tab="redes"><span class="n">04</span> Redes sociais</button>
+      <button data-tab="crescimento"><span class="n">05</span> Crescimento</button>
+    </nav>
+    <div class="sidebar-foot">
+      <button id="btnExport">Exportar dados (.json)</button>
+      <button id="btnImport">Importar dados (.json)</button>
+      <button id="btnClear">Apagar tudo</button>
+      <input type="file" id="fileImport" accept="application/json" style="display:none">
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <h1 id="pageTitle">Rotina diária</h1>
+      <div class="date" id="topDate"></div>
+    </div>
+
+    <!-- ================= ROTINA DIÁRIA ================= -->
+    <section class="tab active" id="tab-rotina">
+      <div class="callout" style="margin-bottom:20px">
+        Monte aqui a lista das tarefas que você costuma fazer todo dia. Na aba <strong>Hoje</strong> elas aparecem como botões — é só clicar para começar a cronometrar, sem digitar nada de novo.
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Adicionar tarefa à rotina</h2></div>
+        <form id="formRotina" class="field-row" style="margin-bottom:0">
+          <div class="field grow">
+            <label>Nome da tarefa</label>
+            <input type="text" id="rotName" placeholder="Ex: Ler a bíblia" required>
+          </div>
+          <div class="field grow">
+            <label>Categoria (opcional)</label>
+            <input type="text" id="rotCat" list="dlCategorias" placeholder="Ex: Fé, Estudo, YouTube">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn">Adicionar à rotina</button>
+          </div>
+        </form>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Sua rotina</h2><div class="hint">a ordem aqui é a ordem que aparece em Hoje</div></div>
+        <div id="rotinaListHolder"></div>
+      </div>
+    </section>
+
+    <!-- ================= HOJE ================= -->
+    <section class="tab" id="tab-hoje">
+      <div id="routineQuickHolder"></div>
+      <div id="runningCardHolder"></div>
+
+      <div class="grid" id="hojeStats"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Registrar tarefa</h2>
+          <div class="mode-toggle">
+            <button id="modeTimer" class="active">Cronômetro</button>
+            <button id="modeManual">Manual</button>
+          </div>
+        </div>
+
+        <form id="formTimer" class="field-row">
+          <div class="field grow">
+            <label>O que você vai fazer</label>
+            <input type="text" id="timerName" list="dlNomes" placeholder="Ex: Faculdade estudar" required>
+          </div>
+          <div class="field grow">
+            <label>Categoria (opcional)</label>
+            <input type="text" id="timerCat" list="dlCategorias" placeholder="Ex: Estudo, YouTube, Casa">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn" id="btnIniciar">Iniciar agora</button>
+          </div>
+        </form>
+
+        <form id="formManual" class="field-row" style="display:none">
+          <div class="field grow">
+            <label>O que você fez</label>
+            <input type="text" id="manName" list="dlNomes" placeholder="Ex: Ler a bíblia" required>
+          </div>
+          <div class="field narrow">
+            <label>Categoria</label>
+            <input type="text" id="manCat" list="dlCategorias" placeholder="opcional">
+          </div>
+          <div class="field time">
+            <label>Data</label>
+            <input type="date" id="manDate" required>
+          </div>
+          <div class="field time">
+            <label>Início</label>
+            <input type="time" id="manStart" step="1" required>
+          </div>
+          <div class="field time">
+            <label>Término</label>
+            <input type="time" id="manEnd" step="1" required>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn">Adicionar</button>
+          </div>
+        </form>
+        <input type="hidden" id="editId">
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Tarefas de hoje</h2>
+          <div class="hint" id="hojeTotalHint"></div>
+        </div>
+        <table>
+          <thead><tr><th>Tarefa</th><th>Início</th><th>Término</th><th class="num">Duração</th><th></th></tr></thead>
+          <tbody id="hojeTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= HISTÓRICO ================= -->
+    <section class="tab" id="tab-historico">
+      <div class="panel">
+        <div class="field-row" style="margin-bottom:0">
+          <div class="field time">
+            <label>De</label>
+            <input type="date" id="filtDe">
+          </div>
+          <div class="field time">
+            <label>Até</label>
+            <input type="date" id="filtAte">
+          </div>
+          <div class="field grow">
+            <label>Buscar por nome</label>
+            <input type="text" id="filtNome" placeholder="Ex: short, faculdade...">
+          </div>
+          <div class="field narrow">
+            <label>Categoria</label>
+            <select id="filtCategoria"><option value="">Todas</option></select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn ghost small" id="btnLimparFiltro">Limpar</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Todos os registros</h2>
+          <div class="hint" id="histTotalHint"></div>
+        </div>
+        <table>
+          <thead><tr><th>Data</th><th>Tarefa</th><th>Início</th><th>Término</th><th class="num">Duração</th><th></th></tr></thead>
+          <tbody id="histTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= ATIVIDADES ================= -->
+    <section class="tab" id="tab-atividades">
+      <div class="panel">
+        <div class="field-row" style="margin-bottom:0">
+          <div class="field grow">
+            <label>Atividade ou categoria</label>
+            <select id="atvSelect"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="atvStats"></div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head"><h2>Horas por mês</h2><div class="hint">mês com mais tempo em destaque</div></div>
+          <div class="chart-wrap"><canvas id="chartMes"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Horas por semana</h2><div class="hint">últimas semanas registradas</div></div>
+          <div class="chart-wrap"><canvas id="chartSemana"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Ranking de atividades</h2><div class="hint">tempo total acumulado</div></div>
+        <table>
+          <thead><tr><th>Atividade</th><th>Categoria</th><th class="num">Ocorrências</th><th class="num">Tempo total</th></tr></thead>
+          <tbody id="rankingTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= REDES SOCIAIS ================= -->
+    <section class="tab" id="tab-redes">
+      <div class="panel">
+        <div class="panel-head"><h2>Novo registro semanal</h2></div>
+        <form id="formRedes" class="field-row" style="margin-bottom:0">
+          <div class="field time">
+            <label>Data</label>
+            <input type="date" id="redeData" required>
+          </div>
+          <div class="field narrow">
+            <label>Plataforma</label>
+            <select id="redePlataforma" required>
+              <option value="YouTube">YouTube</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Outra">Outra...</option>
+            </select>
+          </div>
+          <div class="field narrow" id="redeOutraWrap" style="display:none">
+            <label>Nome da rede</label>
+            <input type="text" id="redeOutraNome" placeholder="Ex: TikTok">
+          </div>
+          <div class="field narrow">
+            <label>Inscritos/seguidores</label>
+            <input type="number" id="redeCount" min="0" required>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn">Salvar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Histórico de contagens</h2></div>
+        <table>
+          <thead><tr><th>Data</th><th>Rede</th><th class="num">Total</th><th class="num">Ganho na semana</th><th></th></tr></thead>
+          <tbody id="redesTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= CRESCIMENTO ================= -->
+    <section class="tab" id="tab-crescimento">
+      <div class="plat-tabs" id="platTabs"></div>
+
+      <div class="best-worst" id="bestWorstHolder"></div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head"><h2>Evolução de seguidores</h2></div>
+          <div class="chart-wrap"><canvas id="chartEvolucao"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Ganho por semana</h2></div>
+          <div class="chart-wrap"><canvas id="chartGanhoSemana"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Crescimento por mês</h2><div class="hint">mês de maior aumento em destaque</div></div>
+        <table>
+          <thead><tr><th>Mês</th><th class="num">Ganho no mês</th><th class="num">Total no fim do mês</th></tr></thead>
+          <tbody id="mesRedesTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<datalist id="dlNomes"></datalist>
+<datalist id="dlCategorias"></datalist>
+
+<script>
+(function(){
+"use strict";
+
+/* ===================== estado / armazenamento ===================== */
+var K_TASKS='ledger_tasks_v1', K_SOCIAL='ledger_social_v1', K_RUN='ledger_running_v1', K_ROUTINE='ledger_routine_v1';
+var tasks = JSON.parse(localStorage.getItem(K_TASKS)||'[]');
+var social = JSON.parse(localStorage.getItem(K_SOCIAL)||'[]');
+var running = JSON.parse(localStorage.getItem(K_RUN)||'null');
+var routine = JSON.parse(localStorage.getItem(K_ROUTINE)||'[]');
+
+function saveTasks(){ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }
+function saveSocial(){ localStorage.setItem(K_SOCIAL, JSON.stringify(social)); }
+function saveRunning(){ localStorage.setItem(K_RUN, running?JSON.stringify(running):'null'); }
+function saveRoutine(){ localStorage.setItem(K_ROUTINE, JSON.stringify(routine)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+/* ===================== utilidades de tempo ===================== */
+function pad(n){ return n<10?'0'+n:''+n; }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function nowTimeStr(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
+function dateFromParts(dateStr,timeStr){
+  var parts=timeStr.split(':');
+  if(parts.length===2) timeStr=timeStr+':00';
+  return new Date(dateStr+'T'+timeStr);
+}
+function trimSec(t){ return t && t.length>5 ? t.slice(0,5) : t; }
+
+function computeDuration(dateStr,start,end){
+  var s=dateFromParts(dateStr,start), e=dateFromParts(dateStr,end);
+  if(e.getTime()<=s.getTime()) e=new Date(e.getTime()+24*3600*1000);
+  return Math.round((e.getTime()-s.getTime())/1000);
+}
+function formatDuration(sec){
+  sec=Math.max(0,Math.round(sec));
+  var h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), s=sec%60;
+  if(h>0) return pad(h)+':'+pad(m)+':'+pad(s);
+  return pad(m)+':'+pad(s);
+}
+function formatHours(sec){ return (sec/3600).toFixed(1).replace('.',',')+' h'; }
+function formatDateBR(dateStr){ var p=dateStr.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+function monthKey(dateStr){ return dateStr.slice(0,7); }
+function monthLabel(mk){
+  var meses=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  var p=mk.split('-'); return meses[parseInt(p[1],10)-1]+'/'+p[0].slice(2);
+}
+function getMonday(dateStr){
+  var d=dateFromParts(dateStr,'00:00'); var day=d.getDay();
+  var diff=(day===0?-6:1-day); d.setDate(d.getDate()+diff);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function weekLabel(wk){ return 'sem. '+formatDateBR(wk); }
+function fmtInt(n){ return n.toLocaleString('pt-BR'); }
+function fmtDelta(n){ var s=n>0?'+':''; return s+fmtInt(n); }
+
+/* ===================== cores por categoria ===================== */
+var CAT_PALETTE=['#FF6F59','#1FB6A6','#8C5EE0','#FF9F1C','#28A879','#3E8EF0','#C74BC2','#E0A63E'];
+function hashStr(s){ var h=0; for(var i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return h; }
+function catColor(cat){ if(!cat) return '#C9B899'; return CAT_PALETTE[hashStr(cat.toLowerCase())%CAT_PALETTE.length]; }
+function normName(n){ return (n||'').trim().toLowerCase(); }
+
+/* ===================== navegação de abas ===================== */
+var tabButtons=document.querySelectorAll('#navTabs button');
+var titles={rotina:'Rotina diária',hoje:'Hoje',historico:'Histórico',atividades:'Tempo por atividade',redes:'Redes sociais',crescimento:'Crescimento'};
+tabButtons.forEach(function(btn){
+  btn.addEventListener('click',function(){
+    tabButtons.forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.querySelectorAll('.tab').forEach(function(s){ s.classList.remove('active'); });
+    var id='tab-'+btn.dataset.tab;
+    document.getElementById(id).classList.add('active');
+    document.getElementById('pageTitle').textContent=titles[btn.dataset.tab];
+    if(btn.dataset.tab==='rotina') renderRotina();
+    if(btn.dataset.tab==='atividades') renderAtividades();
+    if(btn.dataset.tab==='redes') renderRedes();
+    if(btn.dataset.tab==='crescimento') renderCrescimento();
+    if(btn.dataset.tab==='historico') renderHistorico();
+    if(btn.dataset.tab==='hoje') renderHoje();
+  });
+});
+
+var topDate=document.getElementById('topDate');
+function tickTopDate(){
+  var d=new Date();
+  var dias=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+  var meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  topDate.textContent=dias[d.getDay()]+', '+d.getDate()+' de '+meses[d.getMonth()]+' de '+d.getFullYear()+' · '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+tickTopDate(); setInterval(tickTopDate,15000);
+
+/* ===================== datalists ===================== */
+function refreshDatalists(){
+  var names={}, cats={};
+  tasks.forEach(function(t){ names[t.name]=1; if(t.cat) cats[t.cat]=1; });
+  routine.forEach(function(r){ if(r.cat) cats[r.cat]=1; });
+  var dlN=document.getElementById('dlNomes'); dlN.innerHTML='';
+  Object.keys(names).sort().forEach(function(n){ var o=document.createElement('option'); o.value=n; dlN.appendChild(o); });
+  var dlC=document.getElementById('dlCategorias'); dlC.innerHTML='';
+  Object.keys(cats).sort().forEach(function(c){ var o=document.createElement('option'); o.value=c; dlC.appendChild(o); });
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+}
+
+/* ===================== ROTINA DIÁRIA ===================== */
+document.getElementById('formRotina').addEventListener('submit',function(e){
+  e.preventDefault();
+  var name=document.getElementById('rotName').value.trim();
+  var cat=document.getElementById('rotCat').value.trim();
+  if(!name) return;
+  routine.push({id:uid(),name:name,cat:cat});
+  saveRoutine(); refreshDatalists();
+  this.reset();
+  renderRotina(); renderHoje();
+});
+
+function renderRotina(){
+  var holder=document.getElementById('rotinaListHolder');
+  if(routine.length===0){
+    holder.innerHTML='<div class="hint" style="font-style:italic;color:var(--text-faint)">Você ainda não tem tarefas na rotina. Adicione a primeira acima.</div>';
+    return;
+  }
+  holder.innerHTML=routine.map(function(r,idx){
+    return '<div class="routine-list-item">'+
+      '<span class="tagname"><span class="dot" style="background:'+catColor(r.cat)+'"></span>'+escapeHtml(r.name)+
+        (r.cat?'<span class="cat-tag">'+escapeHtml(r.cat)+'</span>':'')+'</span>'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+        '<div class="order-btns"><button data-up="'+r.id+'" '+(idx===0?'disabled style="opacity:.3"':'')+'>▲</button><button data-down="'+r.id+'" '+(idx===routine.length-1?'disabled style="opacity:.3"':'')+'>▼</button></div>'+
+        '<button class="icon-btn del" data-delrot="'+r.id+'">excluir</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  holder.querySelectorAll('[data-delrot]').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(confirm('Remover esta tarefa da rotina?')){
+        routine=routine.filter(function(r){return r.id!==b.dataset.delrot;});
+        saveRoutine(); renderRotina(); renderHoje();
+      }
+    });
+  });
+  holder.querySelectorAll('[data-up]').forEach(function(b){
+    b.addEventListener('click',function(){ moveRoutine(b.dataset.up,-1); });
+  });
+  holder.querySelectorAll('[data-down]').forEach(function(b){
+    b.addEventListener('click',function(){ moveRoutine(b.dataset.down,1); });
+  });
+}
+function moveRoutine(id,dir){
+  var i=routine.findIndex(function(r){return r.id===id;});
+  var j=i+dir;
+  if(i<0||j<0||j>=routine.length) return;
+  var tmp=routine[i]; routine[i]=routine[j]; routine[j]=tmp;
+  saveRoutine(); renderRotina();
+}
+
+function renderRoutineQuick(){
+  var holder=document.getElementById('routineQuickHolder');
+  if(routine.length===0){ holder.innerHTML=''; return; }
+  var td=todayStr();
+  var doneToday={};
+  tasks.filter(function(t){return t.date===td;}).forEach(function(t){
+    var k=normName(t.name);
+    if(!doneToday[k]) doneToday[k]={count:0,dur:0};
+    doneToday[k].count++; doneToday[k].dur+=t.dur;
+  });
+  holder.innerHTML='<div class="panel-head" style="margin-bottom:10px"><h2 style="font-size:14px">Sua rotina de hoje</h2><div class="hint">clique para começar a cronometrar</div></div>'+
+    '<div class="routine-row">'+routine.map(function(r){
+      var d=doneToday[normName(r.name)];
+      return '<div class="routine-chip" data-startroutine="'+r.id+'">'+
+        '<span class="rc-name"><span class="dot" style="background:'+catColor(r.cat)+'"></span>'+escapeHtml(r.name)+'</span>'+
+        (r.cat?'<span class="rc-meta">'+escapeHtml(r.cat)+'</span>':'')+
+        (d?'<span class="rc-done">✓ '+d.count+'x hoje · '+formatDuration(d.dur)+'</span>':'')+
+      '</div>';
+    }).join('')+'</div>';
+  holder.querySelectorAll('[data-startroutine]').forEach(function(chip){
+    chip.addEventListener('click',function(){
+      if(running){ alert('Finalize a tarefa atual antes de iniciar outra da rotina.'); return; }
+      var r=routine.find(function(x){return x.id===chip.dataset.startroutine;});
+      if(!r) return;
+      running={name:r.name,cat:r.cat,startISO:new Date().toISOString(),startDate:todayStr(),startTime:nowTimeStr()};
+      saveRunning();
+      renderRunningCard(); renderHoje();
+    });
+  });
+}
+
+/* ===================== ABA HOJE ===================== */
+var modeTimerBtn=document.getElementById('modeTimer'), modeManualBtn=document.getElementById('modeManual');
+var formTimer=document.getElementById('formTimer'), formManual=document.getElementById('formManual');
+modeTimerBtn.addEventListener('click',function(){
+  modeTimerBtn.classList.add('active'); modeManualBtn.classList.remove('active');
+  formTimer.style.display='flex'; formManual.style.display='none';
+});
+modeManualBtn.addEventListener('click',function(){
+  modeManualBtn.classList.add('active'); modeTimerBtn.classList.remove('active');
+  formManual.style.display='flex'; formTimer.style.display='none';
+  document.getElementById('manDate').value=todayStr();
+});
+
+formTimer.addEventListener('submit',function(e){
+  e.preventDefault();
+  var name=document.getElementById('timerName').value.trim();
+  var cat=document.getElementById('timerCat').value.trim();
+  if(!name) return;
+  running={name:name,cat:cat,startISO:new Date().toISOString(),startDate:todayStr(),startTime:nowTimeStr()};
+  saveRunning();
+  document.getElementById('timerName').value=''; document.getElementById('timerCat').value='';
+  renderRunningCard(); renderHoje();
+});
+
+formManual.addEventListener('submit',function(e){
+  e.preventDefault();
+  var name=document.getElementById('manName').value.trim();
+  var cat=document.getElementById('manCat').value.trim();
+  var date=document.getElementById('manDate').value;
+  var start=document.getElementById('manStart').value;
+  var end=document.getElementById('manEnd').value;
+  if(!name||!date||!start||!end) return;
+  var editId=document.getElementById('editId').value;
+  var dur=computeDuration(date,start,end);
+  if(editId){
+    var t=tasks.find(function(x){return x.id===editId;});
+    if(t){ t.name=name; t.cat=cat; t.date=date; t.start=start; t.end=end; t.dur=dur; }
+    document.getElementById('editId').value='';
+    formManual.querySelector('button[type=submit]').textContent='Adicionar';
+  } else {
+    tasks.push({id:uid(),name:name,cat:cat,date:date,start:start,end:end,dur:dur});
+  }
+  saveTasks(); refreshDatalists();
+  formManual.reset(); document.getElementById('manDate').value=todayStr();
+  renderHoje(); renderHistorico();
+});
+
+function renderRunningCard(){
+  var holder=document.getElementById('runningCardHolder');
+  if(!running){ holder.innerHTML=''; return; }
+  holder.innerHTML =
+    '<div class="running-card">'+
+      '<div class="left"><span class="pulse"></span>'+
+        '<div><div class="name">'+escapeHtml(running.name)+(running.cat?'<span class="cat-tag">'+escapeHtml(running.cat)+'</span>':'')+'</div>'+
+        '<div style="font-size:11.5px;color:var(--text-dim);margin-top:2px">iniciado às '+trimSec(running.startTime)+'</div></div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:center;gap:16px">'+
+        '<div class="elapsed num" id="elapsedClock">00:00:00</div>'+
+        '<button class="btn small" id="btnFinalizar">Finalizar</button>'+
+        '<button class="btn ghost small" id="btnCancelar">Cancelar</button>'+
+      '</div>'+
+    '</div>';
+  document.getElementById('btnFinalizar').addEventListener('click',finalizarTimer);
+  document.getElementById('btnCancelar').addEventListener('click',function(){
+    running=null; saveRunning(); renderRunningCard();
+  });
+}
+function finalizarTimer(){
+  if(!running) return;
+  var startD=new Date(running.startISO);
+  var endD=new Date();
+  var durSec=Math.max(0,Math.round((endD.getTime()-startD.getTime())/1000));
+  var endTime=pad(endD.getHours())+':'+pad(endD.getMinutes())+':'+pad(endD.getSeconds());
+  tasks.push({id:uid(),name:running.name,cat:running.cat,date:running.startDate,start:running.startTime,end:endTime,dur:durSec});
+  saveTasks(); refreshDatalists();
+  running=null; saveRunning();
+  renderRunningCard(); renderHoje(); renderHistorico();
+}
+setInterval(function(){
+  if(!running) return;
+  var el=document.getElementById('elapsedClock');
+  if(!el) return;
+  var start=new Date(running.startISO);
+  el.textContent=formatDuration((Date.now()-start.getTime())/1000);
+},1000);
+
+function renderHoje(){
+  renderRoutineQuick();
+  var td=todayStr();
+  var list=tasks.filter(function(t){ return t.date===td; }).sort(function(a,b){ return a.start<b.start?1:-1; });
+  var total=list.reduce(function(s,t){ return s+t.dur; },0);
+  document.getElementById('hojeTotalHint').textContent=list.length+' tarefa(s) · total '+formatDuration(total);
+
+  var stats=document.getElementById('hojeStats');
+  var longest=list.slice().sort(function(a,b){return b.dur-a.dur;})[0];
+  stats.innerHTML=
+    statCard('Tempo tracked hoje',formatDuration(total),list.length+' tarefas registradas',true)+
+    statCard('Tarefas hoje',String(list.length),'') +
+    statCard('Mais longa hoje',longest?longest.name:'—',longest?formatDuration(longest.dur):'') +
+    statCard('Cronômetro',running?'em andamento':'parado','');
+
+  var tbody=document.getElementById('hojeTableBody');
+  if(list.length===0){
+    tbody.innerHTML='<tr class="empty-row"><td colspan="5">Nenhuma tarefa registrada hoje ainda.</td></tr>';
+  } else {
+    tbody.innerHTML=list.map(function(t){
+      return '<tr>'+
+        '<td><span class="tagname"><span class="dot" style="background:'+catColor(t.cat)+'"></span>'+escapeHtml(t.name)+
+          (t.cat?'<span class="cat-tag">'+escapeHtml(t.cat)+'</span>':'')+'</span></td>'+
+        '<td class="num">'+trimSec(t.start)+'</td>'+
+        '<td class="num">'+trimSec(t.end)+'</td>'+
+        '<td class="num">'+formatDuration(t.dur)+'</td>'+
+        '<td><div class="row-actions">'+
+          '<button class="icon-btn" data-edit="'+t.id+'">editar</button>'+
+          '<button class="icon-btn del" data-del="'+t.id+'">excluir</button>'+
+        '</div></td>'+
+      '</tr>';
+    }).join('');
+  }
+  bindRowActions(tbody);
+}
+
+function statCard(label,value,sub,accent){
+  return '<div class="stat"><div class="label">'+label+'</div><div class="value'+(accent?' accent':'')+' num">'+value+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>';
+}
+
+function bindRowActions(scopeEl){
+  scopeEl.querySelectorAll('[data-edit]').forEach(function(b){
+    b.addEventListener('click',function(){ startEdit(b.dataset.edit); });
+  });
+  scopeEl.querySelectorAll('[data-del]').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(confirm('Excluir este registro?')){
+        tasks=tasks.filter(function(t){return t.id!==b.dataset.del;});
+        saveTasks(); refreshDatalists(); renderHoje(); renderHistorico();
+      }
+    });
+  });
+}
+function startEdit(id){
+  var t=tasks.find(function(x){return x.id===id;});
+  if(!t) return;
+  modeManualBtn.click();
+  document.getElementById('manName').value=t.name;
+  document.getElementById('manCat').value=t.cat||'';
+  document.getElementById('manDate').value=t.date;
+  document.getElementById('manStart').value=t.start;
+  document.getElementById('manEnd').value=t.end;
+  document.getElementById('editId').value=t.id;
+  formManual.querySelector('button[type=submit]').textContent='Salvar edição';
+  formManual.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ===================== ABA HISTÓRICO ===================== */
+function populateCategoriaFilter(){
+  var sel=document.getElementById('filtCategoria');
+  var cur=sel.value;
+  var cats={}; tasks.forEach(function(t){ if(t.cat) cats[t.cat]=1; });
+  sel.innerHTML='<option value="">Todas</option>'+Object.keys(cats).sort().map(function(c){return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>';}).join('');
+  sel.value=cur;
+}
+['filtDe','filtAte','filtNome','filtCategoria'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',renderHistorico);
+  document.getElementById(id).addEventListener('change',renderHistorico);
+});
+document.getElementById('btnLimparFiltro').addEventListener('click',function(){
+  document.getElementById('filtDe').value='';
+  document.getElementById('filtAte').value='';
+  document.getElementById('filtNome').value='';
+  document.getElementById('filtCategoria').value='';
+  renderHistorico();
+});
+
+function renderHistorico(){
+  populateCategoriaFilter();
+  var de=document.getElementById('filtDe').value;
+  var ate=document.getElementById('filtAte').value;
+  var nome=document.getElementById('filtNome').value.trim().toLowerCase();
+  var cat=document.getElementById('filtCategoria').value;
+  var list=tasks.filter(function(t){
+    if(de && t.date<de) return false;
+    if(ate && t.date>ate) return false;
+    if(nome && t.name.toLowerCase().indexOf(nome)===-1) return false;
+    if(cat && t.cat!==cat) return false;
+    return true;
+  }).sort(function(a,b){
+    if(a.date!==b.date) return a.date<b.date?1:-1;
+    return a.start<b.start?1:-1;
+  });
+  var total=list.reduce(function(s,t){return s+t.dur;},0);
+  document.getElementById('histTotalHint').textContent=list.length+' registro(s) · total '+formatDuration(total);
+  var tbody=document.getElementById('histTableBody');
+  if(list.length===0){
+    tbody.innerHTML='<tr class="empty-row"><td colspan="6">Nenhum registro encontrado.</td></tr>';
+  } else {
+    tbody.innerHTML=list.map(function(t){
+      return '<tr>'+
+        '<td class="num">'+formatDateBR(t.date)+'</td>'+
+        '<td><span class="tagname"><span class="dot" style="background:'+catColor(t.cat)+'"></span>'+escapeHtml(t.name)+
+          (t.cat?'<span class="cat-tag">'+escapeHtml(t.cat)+'</span>':'')+'</span></td>'+
+        '<td class="num">'+trimSec(t.start)+'</td>'+
+        '<td class="num">'+trimSec(t.end)+'</td>'+
+        '<td class="num">'+formatDuration(t.dur)+'</td>'+
+        '<td><div class="row-actions">'+
+          '<button class="icon-btn" data-edit="'+t.id+'">editar</button>'+
+          '<button class="icon-btn del" data-del="'+t.id+'">excluir</button>'+
+        '</div></td>'+
+      '</tr>';
+    }).join('');
+  }
+  bindRowActions(tbody);
+}
+
+/* ===================== ABA ATIVIDADES ===================== */
+var chartMes=null, chartSemana=null;
+function buildAtvOptions(){
+  var sel=document.getElementById('atvSelect');
+  var cur=sel.value;
+  var names={}, cats={};
+  tasks.forEach(function(t){ names[t.name]=1; if(t.cat) cats[t.cat]=1; });
+  var html='<optgroup label="Geral"><option value="__all__">Todas as atividades</option></optgroup>';
+  if(Object.keys(cats).length){
+    html+='<optgroup label="Categorias">'+Object.keys(cats).sort().map(function(c){return '<option value="cat:'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>';}).join('')+'</optgroup>';
+  }
+  html+='<optgroup label="Atividades">'+Object.keys(names).sort().map(function(n){return '<option value="'+escapeHtml(n)+'">'+escapeHtml(n)+'</option>';}).join('')+'</optgroup>';
+  sel.innerHTML=html;
+  if(cur && sel.querySelector('option[value="'+cssEscape(cur)+'"]')) sel.value=cur; else sel.value='__all__';
+}
+function cssEscape(v){ return v.replace(/"/g,'\\"'); }
+document.getElementById('atvSelect').addEventListener('change',renderAtividades);
+
+function matchesSelection(t,sel){
+  if(sel==='__all__') return true;
+  if(sel.indexOf('cat:')===0) return t.cat===sel.slice(4);
+  return normName(t.name)===normName(sel);
+}
+
+function renderAtividades(){
+  buildAtvOptions();
+  var sel=document.getElementById('atvSelect').value;
+  var filtered=tasks.filter(function(t){ return matchesSelection(t,sel); });
+
+  var byMonth={}, byWeek={};
+  filtered.forEach(function(t){
+    var mk=monthKey(t.date); byMonth[mk]=(byMonth[mk]||0)+t.dur;
+    var wk=getMonday(t.date); byWeek[wk]=(byWeek[wk]||0)+t.dur;
+  });
+  var monthKeys=Object.keys(byMonth).sort();
+  var weekKeys=Object.keys(byWeek).sort();
+  var bestMonth=monthKeys.reduce(function(b,k){ return (!b||byMonth[k]>byMonth[b])?k:b; },null);
+  var bestWeek=weekKeys.reduce(function(b,k){ return (!b||byWeek[k]>byWeek[b])?k:b; },null);
+  var totalAll=filtered.reduce(function(s,t){return s+t.dur;},0);
+
+  document.getElementById('atvStats').innerHTML=
+    statCard('Tempo total',formatDuration(totalAll),filtered.length+' ocorrência(s)',true)+
+    statCard('Mês com mais tempo',bestMonth?monthLabel(bestMonth):'—',bestMonth?formatHours(byMonth[bestMonth]):'')+
+    statCard('Semana com mais tempo',bestWeek?weekLabel(bestWeek):'—',bestWeek?formatHours(byWeek[bestWeek]):'')+
+    statCard('Ocorrências',String(filtered.length),'');
+
+  var monthLabels=monthKeys.map(monthLabel);
+  var monthData=monthKeys.map(function(k){ return +(byMonth[k]/3600).toFixed(2); });
+  var monthColors=monthKeys.map(function(k){ return k===bestMonth?'#FF9F1C':'#F3DFB0'; });
+  if(chartMes) chartMes.destroy();
+  chartMes=new Chart(document.getElementById('chartMes'),{
+    type:'bar',
+    data:{labels:monthLabels,datasets:[{data:monthData,backgroundColor:monthColors,borderRadius:3,maxBarThickness:34}]},
+    options:chartOptsBar('horas')
+  });
+
+  var last12=weekKeys.slice(-12);
+  var weekLabels=last12.map(weekLabel);
+  var weekData=last12.map(function(k){ return +(byWeek[k]/3600).toFixed(2); });
+  var weekColors=last12.map(function(k){ return k===bestWeek?'#FF9F1C':'#F3DFB0'; });
+  if(chartSemana) chartSemana.destroy();
+  chartSemana=new Chart(document.getElementById('chartSemana'),{
+    type:'bar',
+    data:{labels:weekLabels,datasets:[{data:weekData,backgroundColor:weekColors,borderRadius:3,maxBarThickness:34}]},
+    options:chartOptsBar('horas')
+  });
+
+  var groups={};
+  tasks.forEach(function(t){
+    var key=normName(t.name);
+    if(!groups[key]) groups[key]={name:t.name,cat:t.cat,dur:0,count:0};
+    groups[key].dur+=t.dur; groups[key].count++;
+    if(t.cat) groups[key].cat=t.cat;
+  });
+  var ranking=Object.keys(groups).map(function(k){return groups[k];}).sort(function(a,b){return b.dur-a.dur;}).slice(0,15);
+  var rb=document.getElementById('rankingTableBody');
+  rb.innerHTML = ranking.length ? ranking.map(function(g){
+    return '<tr><td><span class="tagname"><span class="dot" style="background:'+catColor(g.cat)+'"></span>'+escapeHtml(g.name)+'</span></td>'+
+      '<td>'+(g.cat?escapeHtml(g.cat):'—')+'</td>'+
+      '<td class="num">'+g.count+'</td>'+
+      '<td class="num">'+formatDuration(g.dur)+'</td></tr>';
+  }).join('') : '<tr class="empty-row"><td colspan="4">Ainda não há tarefas registradas.</td></tr>';
+}
+
+function chartOptsBar(unitLabel){
+  return {
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.parsed.y+' '+unitLabel;}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#8A7457',font:{size:11}}},
+      y:{grid:{color:'#F2DEB8'},ticks:{color:'#8A7457',font:{size:11}},beginAtZero:true}
+    }
+  };
+}
+
+/* ===================== ABA REDES SOCIAIS ===================== */
+document.getElementById('redeData').value=todayStr();
+document.getElementById('redePlataforma').addEventListener('change',function(){
+  document.getElementById('redeOutraWrap').style.display = this.value==='Outra'?'flex':'none';
+});
+document.getElementById('formRedes').addEventListener('submit',function(e){
+  e.preventDefault();
+  var data=document.getElementById('redeData').value;
+  var plataforma=document.getElementById('redePlataforma').value;
+  if(plataforma==='Outra'){
+    var custom=document.getElementById('redeOutraNome').value.trim();
+    if(custom) plataforma=custom;
+  }
+  var count=parseInt(document.getElementById('redeCount').value,10);
+  if(!data||isNaN(count)) return;
+  social.push({id:uid(),date:data,plat:plataforma,count:count});
+  saveSocial();
+  this.reset();
+  document.getElementById('redeData').value=todayStr();
+  document.getElementById('redeOutraWrap').style.display='none';
+  renderRedes(); renderCrescimento();
+});
+
+function platformsList(){
+  var set={}; social.forEach(function(s){ set[s.plat]=1; });
+  var order=['YouTube','Instagram','Facebook'];
+  var others=Object.keys(set).filter(function(p){return order.indexOf(p)===-1;}).sort();
+  return order.filter(function(p){return set[p];}).concat(others);
+}
+function platColor(p){
+  if(p==='YouTube') return '#FF6B6B';
+  if(p==='Instagram') return '#C74BC2';
+  if(p==='Facebook') return '#3E8EF0';
+  return catColor(p);
+}
+
+function socialWithDelta(plat){
+  var list=social.filter(function(s){return s.plat===plat;}).sort(function(a,b){return a.date<b.date?-1:1;});
+  var out=[];
+  for(var i=0;i<list.length;i++){
+    var prev=i>0?list[i-1].count:null;
+    out.push({id:list[i].id,date:list[i].date,plat:plat,count:list[i].count,delta:prev===null?null:list[i].count-prev});
+  }
+  return out;
+}
+
+function renderRedes(){
+  var all=platformsList();
+  var rows=[];
+  all.forEach(function(p){ rows=rows.concat(socialWithDelta(p)); });
+  rows.sort(function(a,b){ return a.date<b.date?1:-1; });
+  var tbody=document.getElementById('redesTableBody');
+  if(rows.length===0){
+    tbody.innerHTML='<tr class="empty-row"><td colspan="5">Nenhum registro de rede social ainda.</td></tr>';
+  } else {
+    tbody.innerHTML=rows.map(function(r){
+      var deltaHtml = r.delta===null ? '<span style="color:var(--text-faint)">—</span>' :
+        '<span style="color:'+(r.delta>0?'var(--good)':(r.delta<0?'var(--bad)':'var(--text-dim)'))+'">'+fmtDelta(r.delta)+'</span>';
+      return '<tr><td class="num">'+formatDateBR(r.date)+'</td>'+
+        '<td><span class="tagname"><span class="dot" style="background:'+platColor(r.plat)+'"></span>'+escapeHtml(r.plat)+'</span></td>'+
+        '<td class="num">'+fmtInt(r.count)+'</td>'+
+        '<td class="num">'+deltaHtml+'</td>'+
+        '<td><div class="row-actions"><button class="icon-btn del" data-delsoc="'+r.id+'">excluir</button></div></td></tr>';
+    }).join('');
+  }
+  tbody.querySelectorAll('[data-delsoc]').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(confirm('Excluir este registro?')){
+        social=social.filter(function(s){return s.id!==b.dataset.delsoc;});
+        saveSocial(); renderRedes(); renderCrescimento();
+      }
+    });
+  });
+}
+
+/* ===================== ABA CRESCIMENTO ===================== */
+var crescPlat=null;
+var chartEvolucao=null, chartGanho=null;
+function renderCrescimento(){
+  var plats=platformsList();
+  if(!plats.length){
+    document.getElementById('platTabs').innerHTML='<div class="hint">Adicione registros na aba Redes sociais para ver as análises aqui.</div>';
+    document.getElementById('bestWorstHolder').innerHTML='';
+    document.getElementById('mesRedesTableBody').innerHTML='<tr class="empty-row"><td colspan="3">Sem dados ainda.</td></tr>';
+    if(chartEvolucao){chartEvolucao.destroy();chartEvolucao=null;}
+    if(chartGanho){chartGanho.destroy();chartGanho=null;}
+    return;
+  }
+  if(!crescPlat || plats.indexOf(crescPlat)===-1) crescPlat=plats[0];
+  document.getElementById('platTabs').innerHTML=plats.map(function(p){
+    return '<button data-plat="'+escapeHtml(p)+'" class="'+(p===crescPlat?'active':'')+'"><span class="dot" style="background:'+platColor(p)+'"></span>'+escapeHtml(p)+'</button>';
+  }).join('');
+  document.querySelectorAll('#platTabs button').forEach(function(b){
+    b.addEventListener('click',function(){ crescPlat=b.dataset.plat; renderCrescimento(); });
+  });
+
+  var rows=socialWithDelta(crescPlat);
+  var withDelta=rows.filter(function(r){return r.delta!==null;});
+  var best=withDelta.reduce(function(b,r){ return (!b||r.delta>b.delta)?r:b; },null);
+  var worst=withDelta.reduce(function(w,r){ return (!w||r.delta<w.delta)?r:w; },null);
+
+  document.getElementById('bestWorstHolder').innerHTML=
+    '<div class="bw-card best"><div class="label">Melhor semana</div>'+
+      (best?'<div class="val good num">'+fmtDelta(best.delta)+'</div><div class="meta">semana de '+weekLabel(getMonday(best.date))+'</div>':'<div class="val">—</div>')+
+    '</div>'+
+    '<div class="bw-card worst"><div class="label">Pior semana</div>'+
+      (worst?'<div class="val bad num">'+fmtDelta(worst.delta)+'</div><div class="meta">semana de '+weekLabel(getMonday(worst.date))+'</div>':'<div class="val">—</div>')+
+    '</div>';
+
+  if(chartEvolucao) chartEvolucao.destroy();
+  chartEvolucao=new Chart(document.getElementById('chartEvolucao'),{
+    type:'line',
+    data:{labels:rows.map(function(r){return formatDateBR(r.date);}),
+      datasets:[{data:rows.map(function(r){return r.count;}),borderColor:platColor(crescPlat),backgroundColor:platColor(crescPlat)+'33',fill:true,tension:.25,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8A7457',font:{size:11}}},y:{grid:{color:'#F2DEB8'},ticks:{color:'#8A7457',font:{size:11}}}}}
+  });
+
+  if(chartGanho) chartGanho.destroy();
+  chartGanho=new Chart(document.getElementById('chartGanhoSemana'),{
+    type:'bar',
+    data:{labels:withDelta.map(function(r){return formatDateBR(r.date);}),
+      datasets:[{data:withDelta.map(function(r){return r.delta;}),
+        backgroundColor:withDelta.map(function(r){return r.delta>=0?'#28A879':'#F0554B';}),borderRadius:3,maxBarThickness:28}]},
+    options:chartOptsBar('novos')
+  });
+
+  var byMonth={};
+  withDelta.forEach(function(r){
+    var mk=monthKey(r.date);
+    byMonth[mk]=(byMonth[mk]||0)+r.delta;
+  });
+  var lastCountByMonth={};
+  rows.forEach(function(r){ lastCountByMonth[monthKey(r.date)]=r.count; });
+  var monthKeys=Object.keys(byMonth).sort();
+  var bestMonth=monthKeys.reduce(function(b,k){ return (!b||byMonth[k]>byMonth[b])?k:b; },null);
+  var tbody=document.getElementById('mesRedesTableBody');
+  tbody.innerHTML = monthKeys.length ? monthKeys.slice().reverse().map(function(mk){
+    var isBest=mk===bestMonth;
+    return '<tr'+(isBest?' style="background:var(--accent-wash)"':'')+'><td>'+monthLabel(mk)+(isBest?' <span class="cat-tag" style="border-color:var(--accent-strong);color:var(--accent-strong)">melhor mês</span>':'')+'</td>'+
+      '<td class="num" style="color:'+(byMonth[mk]>=0?'var(--good)':'var(--bad)')+'">'+fmtDelta(byMonth[mk])+'</td>'+
+      '<td class="num">'+fmtInt(lastCountByMonth[mk])+'</td></tr>';
+  }).join('') : '<tr class="empty-row"><td colspan="3">Ainda não há dados suficientes (mínimo 2 registros).</td></tr>';
+}
+
+/* ===================== exportar / importar / limpar ===================== */
+document.getElementById('btnExport').addEventListener('click',function(){
+  var data={tasks:tasks,social:social,routine:routine,exportedAt:new Date().toISOString()};
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='diario-de-bordo-'+todayStr()+'.json';
+  a.click();
+});
+document.getElementById('btnImport').addEventListener('click',function(){
+  document.getElementById('fileImport').click();
+});
+document.getElementById('fileImport').addEventListener('change',function(e){
+  var file=e.target.files[0]; if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(){
+    try{
+      var data=JSON.parse(reader.result);
+      if(Array.isArray(data.tasks)) tasks=data.tasks;
+      if(Array.isArray(data.social)) social=data.social;
+      if(Array.isArray(data.routine)) routine=data.routine;
+      saveTasks(); saveSocial(); saveRoutine(); refreshDatalists();
+      renderAll();
+      alert('Dados importados com sucesso.');
+    }catch(err){ alert('Arquivo inválido.'); }
+  };
+  reader.readAsText(file);
+  e.target.value='';
+});
+document.getElementById('btnClear').addEventListener('click',function(){
+  if(confirm('Isso vai apagar todas as tarefas, rotina e registros de redes sociais salvos neste navegador. Tem certeza?')){
+    tasks=[]; social=[]; running=null; routine=[];
+    saveTasks(); saveSocial(); saveRunning(); saveRoutine();
+    refreshDatalists(); renderAll();
+  }
+});
+
+/* ===================== boot ===================== */
+function renderAll(){
+  refreshDatalists();
+  renderRotina();
+  renderRunningCard();
+  renderHoje();
+  renderHistorico();
+  renderAtividades();
+  renderRedes();
+  renderCrescimento();
+}
+document.getElementById('manDate').value=todayStr();
+renderAll();
+
+})();
+</script>
+</body>
+</html>
