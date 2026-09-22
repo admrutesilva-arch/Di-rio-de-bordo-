@@ -434,6 +434,42 @@
 
     <!-- ================= REDES SOCIAIS ================= -->
     <section class="tab" id="tab-redes">
+      <div class="callout" style="margin-bottom:20px">
+        Primeiro cadastre seus canais/páginas aqui embaixo (quantos quiser, em qualquer plataforma). Depois, ao registrar um número, você escolhe qual canal — assim o balanço fica separado por canal, não só por rede.
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Cadastrar canal/página</h2></div>
+        <form id="formCanal" class="field-row" style="margin-bottom:0">
+          <div class="field grow">
+            <label>Nome do canal/página</label>
+            <input type="text" id="canalNome" placeholder="Ex: Meu canal principal" required>
+          </div>
+          <div class="field narrow">
+            <label>Plataforma</label>
+            <select id="canalPlataforma" required>
+              <option value="YouTube">YouTube</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Facebook">Facebook</option>
+              <option value="Outra">Outra...</option>
+            </select>
+          </div>
+          <div class="field narrow" id="canalOutraWrap" style="display:none">
+            <label>Nome da rede</label>
+            <input type="text" id="canalOutraNome" placeholder="Ex: TikTok">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn">Adicionar canal</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Canais cadastrados</h2></div>
+        <div id="canaisListHolder"></div>
+      </div>
+
       <div class="panel">
         <div class="panel-head"><h2>Novo registro semanal</h2></div>
         <form id="formRedes" class="field-row" style="margin-bottom:0">
@@ -441,18 +477,9 @@
             <label>Data</label>
             <input type="date" id="redeData" required>
           </div>
-          <div class="field narrow">
-            <label>Plataforma</label>
-            <select id="redePlataforma" required>
-              <option value="YouTube">YouTube</option>
-              <option value="Instagram">Instagram</option>
-              <option value="Facebook">Facebook</option>
-              <option value="Outra">Outra...</option>
-            </select>
-          </div>
-          <div class="field narrow" id="redeOutraWrap" style="display:none">
-            <label>Nome da rede</label>
-            <input type="text" id="redeOutraNome" placeholder="Ex: TikTok">
+          <div class="field grow">
+            <label>Canal/página</label>
+            <select id="redeCanal" required></select>
           </div>
           <div class="field narrow">
             <label>Inscritos/seguidores</label>
@@ -468,7 +495,7 @@
       <div class="panel">
         <div class="panel-head"><h2>Histórico de contagens</h2></div>
         <table>
-          <thead><tr><th>Data</th><th>Rede</th><th class="num">Total</th><th class="num">Ganho na semana</th><th></th></tr></thead>
+          <thead><tr><th>Data</th><th>Canal</th><th>Rede</th><th class="num">Total</th><th class="num">Ganho na semana</th><th></th></tr></thead>
           <tbody id="redesTableBody"></tbody>
         </table>
       </div>
@@ -477,6 +504,7 @@
     <!-- ================= CRESCIMENTO ================= -->
     <section class="tab" id="tab-crescimento">
       <div class="plat-tabs" id="platTabs"></div>
+      <div class="plat-tabs" id="canalTabs"></div>
 
       <div class="best-worst" id="bestWorstHolder"></div>
 
@@ -495,6 +523,7 @@
         <div class="panel-head"><h2>Crescimento por mês</h2><div class="hint">mês de maior aumento em destaque</div></div>
         <table>
           <thead><tr><th>Mês</th><th class="num">Ganho no mês</th><th class="num">Total no fim do mês</th></tr></thead>
+
           <tbody id="mesRedesTableBody"></tbody>
         </table>
       </div>
@@ -601,13 +630,14 @@
 
 /* ===================== estado / armazenamento ===================== */
 var K_TASKS='ledger_tasks_v1', K_SOCIAL='ledger_social_v1', K_RUN='ledger_running_v1', K_ROUTINE='ledger_routine_v1';
-var K_FINANCE='ledger_finance_v1', K_FINGOAL='ledger_fingoal_v1';
+var K_FINANCE='ledger_finance_v1', K_FINGOAL='ledger_fingoal_v1', K_CANAIS='ledger_canais_v1';
 var tasks = JSON.parse(localStorage.getItem(K_TASKS)||'[]');
 var social = JSON.parse(localStorage.getItem(K_SOCIAL)||'[]');
 var running = JSON.parse(localStorage.getItem(K_RUN)||'null');
 var routine = JSON.parse(localStorage.getItem(K_ROUTINE)||'[]');
 var finance = JSON.parse(localStorage.getItem(K_FINANCE)||'[]');
 var finGoal = JSON.parse(localStorage.getItem(K_FINGOAL)||'null');
+var canais = JSON.parse(localStorage.getItem(K_CANAIS)||'[]');
 
 function saveTasks(){ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }
 function saveSocial(){ localStorage.setItem(K_SOCIAL, JSON.stringify(social)); }
@@ -615,6 +645,7 @@ function saveRunning(){ localStorage.setItem(K_RUN, running?JSON.stringify(runni
 function saveRoutine(){ localStorage.setItem(K_ROUTINE, JSON.stringify(routine)); }
 function saveFinance(){ localStorage.setItem(K_FINANCE, JSON.stringify(finance)); }
 function saveFinGoal(){ localStorage.setItem(K_FINGOAL, finGoal===null?'null':JSON.stringify(finGoal)); }
+function saveCanais(){ localStorage.setItem(K_CANAIS, JSON.stringify(canais)); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 
 function calcStreak(){
@@ -1133,64 +1164,125 @@ function chartOptsBar(unitLabel){
 
 /* ===================== ABA REDES SOCIAIS ===================== */
 document.getElementById('redeData').value=todayStr();
-document.getElementById('redePlataforma').addEventListener('change',function(){
-  document.getElementById('redeOutraWrap').style.display = this.value==='Outra'?'flex':'none';
+
+document.getElementById('canalPlataforma').addEventListener('change',function(){
+  document.getElementById('canalOutraWrap').style.display = this.value==='Outra'?'flex':'none';
 });
-document.getElementById('formRedes').addEventListener('submit',function(e){
+document.getElementById('formCanal').addEventListener('submit',function(e){
   e.preventDefault();
-  var data=document.getElementById('redeData').value;
-  var plataforma=document.getElementById('redePlataforma').value;
-  if(plataforma==='Outra'){
-    var custom=document.getElementById('redeOutraNome').value.trim();
-    if(custom) plataforma=custom;
+  var nome=document.getElementById('canalNome').value.trim();
+  var plat=document.getElementById('canalPlataforma').value;
+  if(plat==='Outra'){
+    var custom=document.getElementById('canalOutraNome').value.trim();
+    if(custom) plat=custom;
   }
-  var count=parseInt(document.getElementById('redeCount').value,10);
-  if(!data||isNaN(count)) return;
-  social.push({id:uid(),date:data,plat:plataforma,count:count});
-  saveSocial();
+  if(!nome) return;
+  canais.push({id:uid(),name:nome,plat:plat});
+  saveCanais();
   this.reset();
-  document.getElementById('redeData').value=todayStr();
-  document.getElementById('redeOutraWrap').style.display='none';
-  renderRedes(); renderCrescimento();
+  document.getElementById('canalOutraWrap').style.display='none';
+  renderCanaisList(); refreshCanalSelect(); renderCrescimento();
 });
 
-function platformsList(){
-  var set={}; social.forEach(function(s){ set[s.plat]=1; });
-  var order=['YouTube','Instagram','Facebook'];
-  var others=Object.keys(set).filter(function(p){return order.indexOf(p)===-1;}).sort();
-  return order.filter(function(p){return set[p];}).concat(others);
-}
 function platColor(p){
   if(p==='YouTube') return '#FF6B6B';
   if(p==='Instagram') return '#C74BC2';
   if(p==='Facebook') return '#3E8EF0';
   return catColor(p);
 }
+function platformsListFromCanais(){
+  var set={}; canais.forEach(function(c){ set[c.plat]=1; });
+  var order=['YouTube','Instagram','Facebook'];
+  var others=Object.keys(set).filter(function(p){return order.indexOf(p)===-1;}).sort();
+  return order.filter(function(p){return set[p];}).concat(others);
+}
+function canaisByPlat(plat){ return canais.filter(function(c){return c.plat===plat;}); }
+function canalById(id){ return canais.find(function(c){return c.id===id;}); }
 
-function socialWithDelta(plat){
-  var list=social.filter(function(s){return s.plat===plat;}).sort(function(a,b){return a.date<b.date?-1:1;});
+function renderCanaisList(){
+  var holder=document.getElementById('canaisListHolder');
+  if(canais.length===0){
+    holder.innerHTML='<div class="hint" style="font-style:italic;color:var(--text-faint)">Você ainda não cadastrou nenhum canal/página. Adicione o primeiro acima.</div>';
+    return;
+  }
+  holder.innerHTML=platformsListFromCanais().map(function(p){
+    return canaisByPlat(p).map(function(c){
+      return '<div class="routine-list-item">'+
+        '<span class="tagname"><span class="dot" style="background:'+platColor(c.plat)+'"></span>'+escapeHtml(c.name)+'<span class="cat-tag">'+escapeHtml(c.plat)+'</span></span>'+
+        '<button class="icon-btn del" data-delcanal="'+c.id+'">excluir</button>'+
+      '</div>';
+    }).join('');
+  }).join('');
+  holder.querySelectorAll('[data-delcanal]').forEach(function(b){
+    b.addEventListener('click',function(){
+      var temRegistros=social.some(function(s){return s.canalId===b.dataset.delcanal;});
+      var msg=temRegistros?'Esse canal já tem registros salvos. Excluir o canal vai excluir TODOS os registros dele também. Continuar?':'Excluir este canal?';
+      if(confirm(msg)){
+        canais=canais.filter(function(c){return c.id!==b.dataset.delcanal;});
+        social=social.filter(function(s){return s.canalId!==b.dataset.delcanal;});
+        saveCanais(); saveSocial();
+        renderCanaisList(); refreshCanalSelect(); renderRedes(); renderCrescimento();
+      }
+    });
+  });
+}
+
+function refreshCanalSelect(){
+  var sel=document.getElementById('redeCanal');
+  var cur=sel.value;
+  if(!canais.length){
+    sel.innerHTML='<option value="">Cadastre um canal acima primeiro</option>';
+    sel.disabled=true;
+    return;
+  }
+  sel.disabled=false;
+  sel.innerHTML=platformsListFromCanais().map(function(p){
+    return '<optgroup label="'+escapeHtml(p)+'">'+canaisByPlat(p).map(function(c){
+      return '<option value="'+c.id+'">'+escapeHtml(c.name)+'</option>';
+    }).join('')+'</optgroup>';
+  }).join('');
+  if(cur && sel.querySelector('option[value="'+cur+'"]')) sel.value=cur;
+}
+
+document.getElementById('formRedes').addEventListener('submit',function(e){
+  e.preventDefault();
+  var data=document.getElementById('redeData').value;
+  var canalId=document.getElementById('redeCanal').value;
+  var count=parseInt(document.getElementById('redeCount').value,10);
+  if(!data||!canalId||isNaN(count)) return;
+  social.push({id:uid(),date:data,canalId:canalId,count:count});
+  saveSocial();
+  this.reset();
+  document.getElementById('redeData').value=todayStr();
+  refreshCanalSelect();
+  renderRedes(); renderCrescimento();
+});
+
+function socialWithDelta(canalId){
+  var list=social.filter(function(s){return s.canalId===canalId;}).sort(function(a,b){return a.date<b.date?-1:1;});
   var out=[];
   for(var i=0;i<list.length;i++){
     var prev=i>0?list[i-1].count:null;
-    out.push({id:list[i].id,date:list[i].date,plat:plat,count:list[i].count,delta:prev===null?null:list[i].count-prev});
+    out.push({id:list[i].id,date:list[i].date,canalId:canalId,count:list[i].count,delta:prev===null?null:list[i].count-prev});
   }
   return out;
 }
 
 function renderRedes(){
-  var all=platformsList();
   var rows=[];
-  all.forEach(function(p){ rows=rows.concat(socialWithDelta(p)); });
+  canais.forEach(function(c){ rows=rows.concat(socialWithDelta(c.id)); });
   rows.sort(function(a,b){ return a.date<b.date?1:-1; });
   var tbody=document.getElementById('redesTableBody');
   if(rows.length===0){
-    tbody.innerHTML='<tr class="empty-row"><td colspan="5">Nenhum registro de rede social ainda.</td></tr>';
+    tbody.innerHTML='<tr class="empty-row"><td colspan="6">Nenhum registro de rede social ainda.</td></tr>';
   } else {
     tbody.innerHTML=rows.map(function(r){
+      var c=canalById(r.canalId);
       var deltaHtml = r.delta===null ? '<span style="color:var(--text-faint)">—</span>' :
         '<span style="color:'+(r.delta>0?'var(--good)':(r.delta<0?'var(--bad)':'var(--text-dim)'))+'">'+fmtDelta(r.delta)+'</span>';
       return '<tr><td class="num">'+formatDateBR(r.date)+'</td>'+
-        '<td><span class="tagname"><span class="dot" style="background:'+platColor(r.plat)+'"></span>'+escapeHtml(r.plat)+'</span></td>'+
+        '<td>'+(c?escapeHtml(c.name):'<span style="color:var(--text-faint)">canal excluído</span>')+'</td>'+
+        '<td><span class="tagname"><span class="dot" style="background:'+platColor(c?c.plat:'')+'"></span>'+escapeHtml(c?c.plat:'—')+'</span></td>'+
         '<td class="num">'+fmtInt(r.count)+'</td>'+
         '<td class="num">'+deltaHtml+'</td>'+
         '<td><div class="row-actions"><button class="icon-btn del" data-delsoc="'+r.id+'">excluir</button></div></td></tr>';
@@ -1207,12 +1299,13 @@ function renderRedes(){
 }
 
 /* ===================== ABA CRESCIMENTO ===================== */
-var crescPlat=null;
+var crescPlat=null, crescCanal=null;
 var chartEvolucao=null, chartGanho=null;
 function renderCrescimento(){
-  var plats=platformsList();
+  var plats=platformsListFromCanais();
   if(!plats.length){
-    document.getElementById('platTabs').innerHTML='<div class="hint">Adicione registros na aba Redes sociais para ver as análises aqui.</div>';
+    document.getElementById('platTabs').innerHTML='<div class="hint">Cadastre um canal/página na aba Redes sociais para ver as análises aqui.</div>';
+    document.getElementById('canalTabs').innerHTML='';
     document.getElementById('bestWorstHolder').innerHTML='';
     document.getElementById('mesRedesTableBody').innerHTML='<tr class="empty-row"><td colspan="3">Sem dados ainda.</td></tr>';
     if(chartEvolucao){chartEvolucao.destroy();chartEvolucao=null;}
@@ -1224,10 +1317,27 @@ function renderCrescimento(){
     return '<button data-plat="'+escapeHtml(p)+'" class="'+(p===crescPlat?'active':'')+'"><span class="dot" style="background:'+platColor(p)+'"></span>'+escapeHtml(p)+'</button>';
   }).join('');
   document.querySelectorAll('#platTabs button').forEach(function(b){
-    b.addEventListener('click',function(){ crescPlat=b.dataset.plat; renderCrescimento(); });
+    b.addEventListener('click',function(){ crescPlat=b.dataset.plat; crescCanal=null; renderCrescimento(); });
   });
 
-  var rows=socialWithDelta(crescPlat);
+  var canaisDoPlat=canaisByPlat(crescPlat);
+  if(!canaisDoPlat.length){
+    document.getElementById('canalTabs').innerHTML='<div class="hint">Nenhum canal cadastrado nessa plataforma ainda.</div>';
+    document.getElementById('bestWorstHolder').innerHTML='';
+    document.getElementById('mesRedesTableBody').innerHTML='<tr class="empty-row"><td colspan="3">Sem dados ainda.</td></tr>';
+    if(chartEvolucao){chartEvolucao.destroy();chartEvolucao=null;}
+    if(chartGanho){chartGanho.destroy();chartGanho=null;}
+    return;
+  }
+  if(!crescCanal || !canaisDoPlat.some(function(c){return c.id===crescCanal;})) crescCanal=canaisDoPlat[0].id;
+  document.getElementById('canalTabs').innerHTML=canaisDoPlat.map(function(c){
+    return '<button data-canal="'+c.id+'" class="'+(c.id===crescCanal?'active':'')+'">'+escapeHtml(c.name)+'</button>';
+  }).join('');
+  document.querySelectorAll('#canalTabs button').forEach(function(b){
+    b.addEventListener('click',function(){ crescCanal=b.dataset.canal; renderCrescimento(); });
+  });
+
+  var rows=socialWithDelta(crescCanal);
   var withDelta=rows.filter(function(r){return r.delta!==null;});
   var best=withDelta.reduce(function(b,r){ return (!b||r.delta>b.delta)?r:b; },null);
   var worst=withDelta.reduce(function(w,r){ return (!w||r.delta<w.delta)?r:w; },null);
@@ -1437,7 +1547,7 @@ document.getElementById('btnExportCsv').addEventListener('click',function(){
 
 /* ===================== exportar / importar / limpar ===================== */
 document.getElementById('btnExport').addEventListener('click',function(){
-  var data={tasks:tasks,social:social,routine:routine,finance:finance,finGoal:finGoal,exportedAt:new Date().toISOString()};
+  var data={tasks:tasks,social:social,routine:routine,finance:finance,finGoal:finGoal,canais:canais,exportedAt:new Date().toISOString()};
   var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -1458,7 +1568,8 @@ document.getElementById('fileImport').addEventListener('change',function(e){
       if(Array.isArray(data.routine)) routine=data.routine;
       if(Array.isArray(data.finance)) finance=data.finance;
       if(data.finGoal!==undefined) finGoal=data.finGoal;
-      saveTasks(); saveSocial(); saveRoutine(); saveFinance(); saveFinGoal(); refreshDatalists();
+      if(Array.isArray(data.canais)) canais=data.canais;
+      saveTasks(); saveSocial(); saveRoutine(); saveFinance(); saveFinGoal(); saveCanais(); refreshDatalists();
       renderAll();
       alert('Dados importados com sucesso.');
     }catch(err){ alert('Arquivo inválido.'); }
@@ -1467,10 +1578,10 @@ document.getElementById('fileImport').addEventListener('change',function(e){
   e.target.value='';
 });
 document.getElementById('btnClear').addEventListener('click',function(){
-  var resp=prompt('Isso vai apagar PARA SEMPRE todas as tarefas, rotina, redes sociais e registros financeiros salvos neste navegador.\n\nPara confirmar, digite APAGAR:');
+  var resp=prompt('Isso vai apagar PARA SEMPRE todas as tarefas, rotina, canais, redes sociais e registros financeiros salvos neste navegador.\n\nPara confirmar, digite APAGAR:');
   if(resp!==null && resp.trim().toUpperCase()==='APAGAR'){
-    tasks=[]; social=[]; running=null; routine=[]; finance=[]; finGoal=null;
-    saveTasks(); saveSocial(); saveRunning(); saveRoutine(); saveFinance(); saveFinGoal();
+    tasks=[]; social=[]; running=null; routine=[]; finance=[]; finGoal=null; canais=[];
+    saveTasks(); saveSocial(); saveRunning(); saveRoutine(); saveFinance(); saveFinGoal(); saveCanais();
     document.getElementById('metaValor').value='';
     refreshDatalists(); renderAll();
   }
@@ -1484,6 +1595,8 @@ function renderAll(){
   renderHoje();
   renderHistorico();
   renderAtividades();
+  renderCanaisList();
+  refreshCanalSelect();
   renderRedes();
   renderCrescimento();
   renderFinancas();
