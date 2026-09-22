@@ -156,6 +156,26 @@
 
   .callout{border:1px solid var(--line);border-left:3px solid var(--accent-strong);background:var(--panel-2);padding:12px 14px;border-radius:var(--radius);font-size:12.5px;color:var(--text-dim);}
 
+  /* ---------- meta / progresso ---------- */
+  .goal-panel{display:flex;flex-direction:column;gap:8px;}
+  .goal-row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .goal-row .goal-label{font-size:12px;color:var(--text-dim);}
+  .goal-row .goal-value{font-family:'Fraunces',serif;font-size:15px;color:var(--text);}
+  .goal-track{width:100%;height:12px;border-radius:8px;background:var(--bg-2);border:1px solid var(--line);overflow:hidden;}
+  .goal-fill{height:100%;background:linear-gradient(90deg,var(--accent-strong),var(--accent));border-radius:8px 0 0 8px;transition:width .3s ease;}
+  .goal-pct{font-size:11.5px;color:var(--text-dim);}
+
+  /* ---------- mensagens de desempenho ---------- */
+  .msg-card{display:flex;gap:10px;align-items:flex-start;border-radius:var(--radius);padding:13px 15px;font-size:13px;line-height:1.5;margin-bottom:12px;}
+  .msg-card.up{background:#EAF6EE;border:1px solid #BFE3C8;color:#1F6B3E;}
+  .msg-card.down{background:var(--panel-2);border:1px solid var(--line);color:var(--text-dim);}
+  .msg-card .ico{font-size:18px;line-height:1;flex:none;}
+
+  /* ---------- streak ---------- */
+  .streak-badge{display:inline-flex;align-items:center;gap:5px;background:var(--accent-wash);color:var(--accent-strong);font-size:12px;font-weight:700;padding:4px 10px;border-radius:12px;margin-left:8px;}
+
+  .storage-hint{font-size:10.5px;color:var(--text-faint);padding:10px 22px 0;line-height:1.4;}
+
   .plat-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
   .plat-tabs button{background:var(--bg);border:1px solid var(--line);color:var(--text-dim);padding:7px 13px;border-radius:14px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:7px;}
   .plat-tabs button.active{border-color:var(--accent-strong);color:var(--text);background:var(--accent-wash);}
@@ -196,6 +216,7 @@
     .sidebar-foot{display:none;}
     nav.tabs{flex-direction:row;padding:0;}
     nav.tabs button{white-space:nowrap;}
+    nav.tabs button.active{box-shadow:inset 0 -3px 0 var(--accent-strong);}
     main{padding:22px 18px 40px;}
   }
   ::-webkit-scrollbar{height:8px;width:8px;}
@@ -216,6 +237,8 @@
       <button data-tab="atividades"><span class="n">03</span> Tempo por atividade</button>
       <button data-tab="redes"><span class="n">04</span> Redes sociais</button>
       <button data-tab="crescimento"><span class="n">05</span> Crescimento</button>
+      <button data-tab="financas"><span class="n">06</span> Finanças</button>
+      <button data-tab="crescfin"><span class="n">07</span> Crescimento financeiro</button>
     </nav>
     <div class="sidebar-foot">
       <button id="btnExport">Exportar dados (.json)</button>
@@ -223,6 +246,7 @@
       <button id="btnClear">Apagar tudo</button>
       <input type="file" id="fileImport" accept="application/json" style="display:none">
     </div>
+    <div class="storage-hint">Os dados ficam salvos só neste navegador. Exporte de vez em quando pra não perder o histórico.</div>
   </aside>
 
   <main>
@@ -355,6 +379,10 @@
             <label>&nbsp;</label>
             <button class="btn ghost small" id="btnLimparFiltro">Limpar</button>
           </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn ghost small" id="btnExportCsv">Exportar CSV</button>
+          </div>
         </div>
       </div>
       <div class="panel">
@@ -379,6 +407,8 @@
           </div>
         </div>
       </div>
+
+      <div id="atvMsgHolder"></div>
 
       <div class="grid" id="atvStats"></div>
 
@@ -470,6 +500,95 @@
       </div>
     </section>
 
+    <!-- ================= FINANÇAS ================= -->
+    <section class="tab" id="tab-financas">
+      <div class="callout" style="margin-bottom:20px">
+        Registre aqui o seu saldo (quanto você tem hoje) a cada data. O app calcula sozinho quanto você ganhou ou perdeu de uma vez pra outra — igual já faz com os seguidores das redes sociais.
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Sua meta financeira</h2><div class="hint">opcional — usada na barra de progresso</div></div>
+        <form id="formMeta" class="field-row" style="margin-bottom:0">
+          <div class="field time">
+            <label>Meta (R$)</label>
+            <input type="number" id="metaValor" min="0" step="0.01" placeholder="Ex: 5000">
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn">Salvar meta</button>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="button" class="btn ghost" id="btnLimparMeta">Remover meta</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Novo registro de saldo</h2></div>
+        <form id="formFinancas" class="field-row" style="margin-bottom:0">
+          <div class="field time">
+            <label>Data</label>
+            <input type="date" id="finData" required>
+          </div>
+          <div class="field narrow">
+            <label>Saldo (R$)</label>
+            <input type="number" id="finValor" min="0" step="0.01" required>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn">Salvar</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Histórico de saldos</h2></div>
+        <table>
+          <thead><tr><th>Data</th><th class="num">Saldo</th><th class="num">Variação</th><th></th></tr></thead>
+          <tbody id="finTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ================= CRESCIMENTO FINANCEIRO ================= -->
+    <section class="tab" id="tab-crescfin">
+      <div class="panel" id="metaProgressHolder" style="display:none">
+        <div class="panel-head"><h2>Progresso da meta</h2></div>
+        <div class="goal-panel">
+          <div class="goal-row">
+            <span class="goal-label">saldo atual</span>
+            <span class="goal-value" id="metaSaldoAtual">—</span>
+            <span class="goal-label">meta</span>
+            <span class="goal-value" id="metaValorAtual">—</span>
+          </div>
+          <div class="goal-track"><div class="goal-fill" id="metaFill" style="width:0%"></div></div>
+          <div class="goal-pct" id="metaPct"></div>
+        </div>
+      </div>
+
+      <div class="best-worst" id="finBestWorstHolder"></div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head"><h2>Evolução do saldo</h2></div>
+          <div class="chart-wrap"><canvas id="chartFinEvolucao"></canvas></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Ganho por semana</h2></div>
+          <div class="chart-wrap"><canvas id="chartFinGanho"></canvas></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Crescimento por mês</h2><div class="hint">mês de maior aumento em destaque</div></div>
+        <table>
+          <thead><tr><th>Mês</th><th class="num">Ganho no mês</th><th class="num">Saldo no fim do mês</th></tr></thead>
+          <tbody id="mesFinTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -482,16 +601,35 @@
 
 /* ===================== estado / armazenamento ===================== */
 var K_TASKS='ledger_tasks_v1', K_SOCIAL='ledger_social_v1', K_RUN='ledger_running_v1', K_ROUTINE='ledger_routine_v1';
+var K_FINANCE='ledger_finance_v1', K_FINGOAL='ledger_fingoal_v1';
 var tasks = JSON.parse(localStorage.getItem(K_TASKS)||'[]');
 var social = JSON.parse(localStorage.getItem(K_SOCIAL)||'[]');
 var running = JSON.parse(localStorage.getItem(K_RUN)||'null');
 var routine = JSON.parse(localStorage.getItem(K_ROUTINE)||'[]');
+var finance = JSON.parse(localStorage.getItem(K_FINANCE)||'[]');
+var finGoal = JSON.parse(localStorage.getItem(K_FINGOAL)||'null');
 
 function saveTasks(){ localStorage.setItem(K_TASKS, JSON.stringify(tasks)); }
 function saveSocial(){ localStorage.setItem(K_SOCIAL, JSON.stringify(social)); }
 function saveRunning(){ localStorage.setItem(K_RUN, running?JSON.stringify(running):'null'); }
 function saveRoutine(){ localStorage.setItem(K_ROUTINE, JSON.stringify(routine)); }
+function saveFinance(){ localStorage.setItem(K_FINANCE, JSON.stringify(finance)); }
+function saveFinGoal(){ localStorage.setItem(K_FINGOAL, finGoal===null?'null':JSON.stringify(finGoal)); }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+function calcStreak(){
+  var daysWithTask={};
+  tasks.forEach(function(t){ daysWithTask[t.date]=1; });
+  var d=new Date(); var todayHasTask=!!daysWithTask[todayStr()];
+  if(!todayHasTask) d.setDate(d.getDate()-1);
+  var streak=0;
+  while(true){
+    var ds=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+    if(!daysWithTask[ds]) break;
+    streak++; d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
 
 /* ===================== utilidades de tempo ===================== */
 function pad(n){ return n<10?'0'+n:''+n; }
@@ -539,7 +677,7 @@ function normName(n){ return (n||'').trim().toLowerCase(); }
 
 /* ===================== navegação de abas ===================== */
 var tabButtons=document.querySelectorAll('#navTabs button');
-var titles={rotina:'Rotina diária',hoje:'Hoje',historico:'Histórico',atividades:'Tempo por atividade',redes:'Redes sociais',crescimento:'Crescimento'};
+var titles={rotina:'Rotina diária',hoje:'Hoje',historico:'Histórico',atividades:'Tempo por atividade',redes:'Redes sociais',crescimento:'Crescimento',financas:'Finanças',crescfin:'Crescimento financeiro'};
 tabButtons.forEach(function(btn){
   btn.addEventListener('click',function(){
     tabButtons.forEach(function(b){ b.classList.remove('active'); });
@@ -554,6 +692,8 @@ tabButtons.forEach(function(btn){
     if(btn.dataset.tab==='crescimento') renderCrescimento();
     if(btn.dataset.tab==='historico') renderHistorico();
     if(btn.dataset.tab==='hoje') renderHoje();
+    if(btn.dataset.tab==='financas') renderFinancas();
+    if(btn.dataset.tab==='crescfin') renderCrescFin();
   });
 });
 
@@ -642,7 +782,8 @@ function renderRoutineQuick(){
     if(!doneToday[k]) doneToday[k]={count:0,dur:0};
     doneToday[k].count++; doneToday[k].dur+=t.dur;
   });
-  holder.innerHTML='<div class="panel-head" style="margin-bottom:10px"><h2 style="font-size:14px">Sua rotina de hoje</h2><div class="hint">clique para começar a cronometrar</div></div>'+
+  var streak=calcStreak();
+  holder.innerHTML='<div class="panel-head" style="margin-bottom:10px"><h2 style="font-size:14px">Sua rotina de hoje'+(streak>0?'<span class="streak-badge">🔥 '+streak+(streak===1?' dia seguido':' dias seguidos')+'</span>':'')+'</h2><div class="hint">clique para começar a cronometrar</div></div>'+
     '<div class="routine-row">'+routine.map(function(r){
       var d=doneToday[normName(r.name)];
       return '<div class="routine-chip" data-startroutine="'+r.id+'">'+
@@ -836,13 +977,12 @@ document.getElementById('btnLimparFiltro').addEventListener('click',function(){
   renderHistorico();
 });
 
-function renderHistorico(){
-  populateCategoriaFilter();
+function getHistoricoFilteredList(){
   var de=document.getElementById('filtDe').value;
   var ate=document.getElementById('filtAte').value;
   var nome=document.getElementById('filtNome').value.trim().toLowerCase();
   var cat=document.getElementById('filtCategoria').value;
-  var list=tasks.filter(function(t){
+  return tasks.filter(function(t){
     if(de && t.date<de) return false;
     if(ate && t.date>ate) return false;
     if(nome && t.name.toLowerCase().indexOf(nome)===-1) return false;
@@ -852,6 +992,11 @@ function renderHistorico(){
     if(a.date!==b.date) return a.date<b.date?1:-1;
     return a.start<b.start?1:-1;
   });
+}
+
+function renderHistorico(){
+  populateCategoriaFilter();
+  var list=getHistoricoFilteredList();
   var total=list.reduce(function(s,t){return s+t.dur;},0);
   document.getElementById('histTotalHint').textContent=list.length+' registro(s) · total '+formatDuration(total);
   var tbody=document.getElementById('histTableBody');
@@ -913,14 +1058,29 @@ function renderAtividades(){
   var monthKeys=Object.keys(byMonth).sort();
   var weekKeys=Object.keys(byWeek).sort();
   var bestMonth=monthKeys.reduce(function(b,k){ return (!b||byMonth[k]>byMonth[b])?k:b; },null);
+  var worstMonth=monthKeys.reduce(function(w,k){ return (!w||byMonth[k]<byMonth[w])?k:w; },null);
   var bestWeek=weekKeys.reduce(function(b,k){ return (!b||byWeek[k]>byWeek[b])?k:b; },null);
+  var worstWeek=weekKeys.reduce(function(w,k){ return (!w||byWeek[k]<byWeek[w])?k:w; },null);
   var totalAll=filtered.reduce(function(s,t){return s+t.dur;},0);
 
   document.getElementById('atvStats').innerHTML=
     statCard('Tempo total',formatDuration(totalAll),filtered.length+' ocorrência(s)',true)+
     statCard('Mês com mais tempo',bestMonth?monthLabel(bestMonth):'—',bestMonth?formatHours(byMonth[bestMonth]):'')+
+    statCard('Mês com menos tempo',(worstMonth&&worstMonth!==bestMonth)?monthLabel(worstMonth):'—',(worstMonth&&worstMonth!==bestMonth)?formatHours(byMonth[worstMonth]):'')+
     statCard('Semana com mais tempo',bestWeek?weekLabel(bestWeek):'—',bestWeek?formatHours(byWeek[bestWeek]):'')+
+    statCard('Semana com menos tempo',(worstWeek&&worstWeek!==bestWeek)?weekLabel(worstWeek):'—',(worstWeek&&worstWeek!==bestWeek)?formatHours(byWeek[worstWeek]):'')+
     statCard('Ocorrências',String(filtered.length),'');
+
+  var msgHolder=document.getElementById('atvMsgHolder');
+  var msgs='';
+  var atividadeLabel = sel==='__all__' ? 'nas suas atividades' : (sel.indexOf('cat:')===0 ? 'na categoria '+escapeHtml(sel.slice(4)) : 'em "'+escapeHtml(sel)+'"');
+  if(bestWeek && byWeek[bestWeek]>0){
+    msgs+='<div class="msg-card up"><span class="ico">🏆</span><div><strong>Semana campeã '+atividadeLabel+':</strong> Uaaall que show! Você passou '+formatHours(byWeek[bestWeek])+' na semana de '+weekLabel(bestWeek)+', já está profissional! Não pare, continue brilhando e dando o seu melhor! 😍🙏❤️</div></div>';
+  }
+  if(worstWeek && worstWeek!==bestWeek && weekKeys.length>1){
+    msgs+='<div class="msg-card down"><span class="ico">💛</span><div>Na semana de '+weekLabel(worstWeek)+' você passou menos tempo '+atividadeLabel+' ('+formatHours(byWeek[worstWeek])+'), mas não desanime! Tente mais um pouco na próxima e seu desempenho será bem melhor 😍🙏</div></div>';
+  }
+  msgHolder.innerHTML=msgs;
 
   var monthLabels=monthKeys.map(monthLabel);
   var monthData=monthKeys.map(function(k){ return +(byMonth[k]/3600).toFixed(2); });
@@ -1116,9 +1276,168 @@ function renderCrescimento(){
   }).join('') : '<tr class="empty-row"><td colspan="3">Ainda não há dados suficientes (mínimo 2 registros).</td></tr>';
 }
 
+/* ===================== ABA FINANÇAS ===================== */
+function fmtMoney(n){
+  return 'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtMoneyDelta(n){
+  var s=n>0?'+':''; return s+fmtMoney(n).replace('R$ ','R$ ');
+}
+document.getElementById('finData').value=todayStr();
+document.getElementById('metaValor').value = finGoal!==null ? finGoal : '';
+
+document.getElementById('formMeta').addEventListener('submit',function(e){
+  e.preventDefault();
+  var v=parseFloat(document.getElementById('metaValor').value);
+  if(isNaN(v)||v<=0) return;
+  finGoal=v; saveFinGoal();
+  renderCrescFin();
+});
+document.getElementById('btnLimparMeta').addEventListener('click',function(){
+  finGoal=null; saveFinGoal();
+  document.getElementById('metaValor').value='';
+  renderCrescFin();
+});
+
+document.getElementById('formFinancas').addEventListener('submit',function(e){
+  e.preventDefault();
+  var data=document.getElementById('finData').value;
+  var valor=parseFloat(document.getElementById('finValor').value);
+  if(!data||isNaN(valor)) return;
+  finance.push({id:uid(),date:data,value:valor});
+  saveFinance();
+  this.reset();
+  document.getElementById('finData').value=todayStr();
+  renderFinancas(); renderCrescFin();
+});
+
+function financeWithDelta(){
+  var list=finance.slice().sort(function(a,b){return a.date<b.date?-1:1;});
+  var out=[];
+  for(var i=0;i<list.length;i++){
+    var prev=i>0?list[i-1].value:null;
+    out.push({id:list[i].id,date:list[i].date,value:list[i].value,delta:prev===null?null:list[i].value-prev});
+  }
+  return out;
+}
+
+function renderFinancas(){
+  var rows=financeWithDelta().slice().sort(function(a,b){ return a.date<b.date?1:-1; });
+  var tbody=document.getElementById('finTableBody');
+  if(rows.length===0){
+    tbody.innerHTML='<tr class="empty-row"><td colspan="4">Nenhum registro financeiro ainda.</td></tr>';
+  } else {
+    tbody.innerHTML=rows.map(function(r){
+      var deltaHtml = r.delta===null ? '<span style="color:var(--text-faint)">—</span>' :
+        '<span style="color:'+(r.delta>0?'var(--good)':(r.delta<0?'var(--bad)':'var(--text-dim)'))+'">'+fmtMoneyDelta(r.delta)+'</span>';
+      return '<tr><td class="num">'+formatDateBR(r.date)+'</td>'+
+        '<td class="num">'+fmtMoney(r.value)+'</td>'+
+        '<td class="num">'+deltaHtml+'</td>'+
+        '<td><div class="row-actions"><button class="icon-btn del" data-delfin="'+r.id+'">excluir</button></div></td></tr>';
+    }).join('');
+  }
+  tbody.querySelectorAll('[data-delfin]').forEach(function(b){
+    b.addEventListener('click',function(){
+      if(confirm('Excluir este registro?')){
+        finance=finance.filter(function(f){return f.id!==b.dataset.delfin;});
+        saveFinance(); renderFinancas(); renderCrescFin();
+      }
+    });
+  });
+}
+
+/* ===================== ABA CRESCIMENTO FINANCEIRO ===================== */
+var chartFinEvolucao=null, chartFinGanho=null;
+function renderCrescFin(){
+  var rows=financeWithDelta();
+  var withDelta=rows.filter(function(r){return r.delta!==null;});
+
+  var holder=document.getElementById('metaProgressHolder');
+  if(finGoal!==null && finGoal>0){
+    holder.style.display='';
+    var atual = rows.length ? rows[rows.length-1].value : 0;
+    var pct=Math.max(0,Math.min(100,(atual/finGoal)*100));
+    document.getElementById('metaSaldoAtual').textContent=fmtMoney(atual);
+    document.getElementById('metaValorAtual').textContent=fmtMoney(finGoal);
+    document.getElementById('metaFill').style.width=pct.toFixed(1)+'%';
+    document.getElementById('metaPct').textContent=pct.toFixed(0)+'% da meta alcançada'+(pct>=100?' 🎉':'');
+  } else {
+    holder.style.display='none';
+  }
+
+  if(!rows.length){
+    document.getElementById('finBestWorstHolder').innerHTML='';
+    document.getElementById('mesFinTableBody').innerHTML='<tr class="empty-row"><td colspan="3">Sem dados ainda.</td></tr>';
+    if(chartFinEvolucao){chartFinEvolucao.destroy();chartFinEvolucao=null;}
+    if(chartFinGanho){chartFinGanho.destroy();chartFinGanho=null;}
+    return;
+  }
+
+  var best=withDelta.reduce(function(b,r){ return (!b||r.delta>b.delta)?r:b; },null);
+  var worst=withDelta.reduce(function(w,r){ return (!w||r.delta<w.delta)?r:w; },null);
+  document.getElementById('finBestWorstHolder').innerHTML=
+    '<div class="bw-card best"><div class="label">Melhor semana</div>'+
+      (best?'<div class="val good num">'+fmtMoneyDelta(best.delta)+'</div><div class="meta">semana de '+weekLabel(getMonday(best.date))+'</div>':'<div class="val">—</div>')+
+    '</div>'+
+    '<div class="bw-card worst"><div class="label">Pior semana</div>'+
+      (worst?'<div class="val bad num">'+fmtMoneyDelta(worst.delta)+'</div><div class="meta">semana de '+weekLabel(getMonday(worst.date))+'</div>':'<div class="val">—</div>')+
+    '</div>';
+
+  if(chartFinEvolucao) chartFinEvolucao.destroy();
+  chartFinEvolucao=new Chart(document.getElementById('chartFinEvolucao'),{
+    type:'line',
+    data:{labels:rows.map(function(r){return formatDateBR(r.date);}),
+      datasets:[{data:rows.map(function(r){return r.value;}),borderColor:'#28A879',backgroundColor:'#28A87933',fill:true,tension:.25,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return fmtMoney(ctx.parsed.y);}}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8A7457',font:{size:11}}},y:{grid:{color:'#F2DEB8'},ticks:{color:'#8A7457',font:{size:11}}}}}
+  });
+
+  if(chartFinGanho) chartFinGanho.destroy();
+  chartFinGanho=new Chart(document.getElementById('chartFinGanho'),{
+    type:'bar',
+    data:{labels:withDelta.map(function(r){return formatDateBR(r.date);}),
+      datasets:[{data:withDelta.map(function(r){return r.delta;}),
+        backgroundColor:withDelta.map(function(r){return r.delta>=0?'#28A879':'#F0554B';}),borderRadius:3,maxBarThickness:28}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return fmtMoney(ctx.parsed.y);}}}},
+      scales:{x:{grid:{display:false},ticks:{color:'#8A7457',font:{size:11}}},y:{grid:{color:'#F2DEB8'},ticks:{color:'#8A7457',font:{size:11}}}}}
+  });
+
+  var byMonth={};
+  withDelta.forEach(function(r){
+    var mk=monthKey(r.date);
+    byMonth[mk]=(byMonth[mk]||0)+r.delta;
+  });
+  var lastValueByMonth={};
+  rows.forEach(function(r){ lastValueByMonth[monthKey(r.date)]=r.value; });
+  var monthKeys=Object.keys(byMonth).sort();
+  var bestMonth=monthKeys.reduce(function(b,k){ return (!b||byMonth[k]>byMonth[b])?k:b; },null);
+  var tbody=document.getElementById('mesFinTableBody');
+  tbody.innerHTML = monthKeys.length ? monthKeys.slice().reverse().map(function(mk){
+    var isBest=mk===bestMonth;
+    return '<tr'+(isBest?' style="background:var(--accent-wash)"':'')+'><td>'+monthLabel(mk)+(isBest?' <span class="cat-tag" style="border-color:var(--accent-strong);color:var(--accent-strong)">melhor mês</span>':'')+'</td>'+
+      '<td class="num" style="color:'+(byMonth[mk]>=0?'var(--good)':'var(--bad)')+'">'+fmtMoneyDelta(byMonth[mk])+'</td>'+
+      '<td class="num">'+fmtMoney(lastValueByMonth[mk])+'</td></tr>';
+  }).join('') : '<tr class="empty-row"><td colspan="3">Ainda não há dados suficientes (mínimo 2 registros).</td></tr>';
+}
+
+document.getElementById('btnExportCsv').addEventListener('click',function(){
+  var list=getHistoricoFilteredList();
+  var header=['Data','Tarefa','Categoria','Início','Término','Duração (h)'];
+  function csvCell(v){ v=String(v==null?'':v); if(/[",;\n]/.test(v)) v='"'+v.replace(/"/g,'""')+'"'; return v; }
+  var lines=[header.map(csvCell).join(';')];
+  list.forEach(function(t){
+    lines.push([formatDateBR(t.date),t.name,t.cat||'',trimSec(t.start),trimSec(t.end),(t.dur/3600).toFixed(2).replace('.',',')].map(csvCell).join(';'));
+  });
+  var blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='historico-'+todayStr()+'.csv';
+  a.click();
+});
+
 /* ===================== exportar / importar / limpar ===================== */
 document.getElementById('btnExport').addEventListener('click',function(){
-  var data={tasks:tasks,social:social,routine:routine,exportedAt:new Date().toISOString()};
+  var data={tasks:tasks,social:social,routine:routine,finance:finance,finGoal:finGoal,exportedAt:new Date().toISOString()};
   var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   var a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -1137,7 +1456,9 @@ document.getElementById('fileImport').addEventListener('change',function(e){
       if(Array.isArray(data.tasks)) tasks=data.tasks;
       if(Array.isArray(data.social)) social=data.social;
       if(Array.isArray(data.routine)) routine=data.routine;
-      saveTasks(); saveSocial(); saveRoutine(); refreshDatalists();
+      if(Array.isArray(data.finance)) finance=data.finance;
+      if(data.finGoal!==undefined) finGoal=data.finGoal;
+      saveTasks(); saveSocial(); saveRoutine(); saveFinance(); saveFinGoal(); refreshDatalists();
       renderAll();
       alert('Dados importados com sucesso.');
     }catch(err){ alert('Arquivo inválido.'); }
@@ -1146,9 +1467,11 @@ document.getElementById('fileImport').addEventListener('change',function(e){
   e.target.value='';
 });
 document.getElementById('btnClear').addEventListener('click',function(){
-  if(confirm('Isso vai apagar todas as tarefas, rotina e registros de redes sociais salvos neste navegador. Tem certeza?')){
-    tasks=[]; social=[]; running=null; routine=[];
-    saveTasks(); saveSocial(); saveRunning(); saveRoutine();
+  var resp=prompt('Isso vai apagar PARA SEMPRE todas as tarefas, rotina, redes sociais e registros financeiros salvos neste navegador.\n\nPara confirmar, digite APAGAR:');
+  if(resp!==null && resp.trim().toUpperCase()==='APAGAR'){
+    tasks=[]; social=[]; running=null; routine=[]; finance=[]; finGoal=null;
+    saveTasks(); saveSocial(); saveRunning(); saveRoutine(); saveFinance(); saveFinGoal();
+    document.getElementById('metaValor').value='';
     refreshDatalists(); renderAll();
   }
 });
@@ -1163,6 +1486,8 @@ function renderAll(){
   renderAtividades();
   renderRedes();
   renderCrescimento();
+  renderFinancas();
+  renderCrescFin();
 }
 document.getElementById('manDate').value=todayStr();
 renderAll();
